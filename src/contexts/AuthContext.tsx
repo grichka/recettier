@@ -30,31 +30,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await googleAuthService.initialize();
       
-      if (googleAuthService.isSignedIn()) {
-        const googleUser = googleAuthService.getCurrentUser();
-        if (googleUser) {
-          const profile = googleUser.getBasicProfile();
-          const user: User = {
-            id: profile.getId(),
-            email: profile.getEmail(),
-            name: profile.getName(),
-            picture: profile.getImageUrl(),
-            accessToken: googleAuthService.getAccessToken() || '',
-          };
-          
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
+      // Check if we have user profile information and try to get a valid token
+      if (googleAuthService.hasUserProfile()) {
+        const hasValidToken = await googleAuthService.ensureValidToken();
+        
+        if (hasValidToken) {
+          const googleUser = googleAuthService.getCurrentUser();
+          if (googleUser) {
+            const profile = googleUser.getBasicProfile();
+            const user: User = {
+              id: profile.getId(),
+              email: profile.getEmail(),
+              name: profile.getName(),
+              picture: profile.getImageUrl(),
+              accessToken: googleAuthService.getAccessToken() || '',
+            };
+            
+            setAuthState({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            return;
+          }
         }
-      } else {
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-        }));
       }
+      
+      // No valid authentication found
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+      }));
     } catch (error) {
       console.error('Auth initialization error:', error);
       setAuthState({
@@ -70,6 +77,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
+      // Initialize first to set up the token client callback
+      await googleAuthService.initialize();
+      
+      // This will now trigger the OAuth flow and handle both ID token and access token
       const googleUser = await googleAuthService.signIn();
       const profile = googleUser.getBasicProfile();
       
