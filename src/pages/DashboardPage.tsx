@@ -14,7 +14,7 @@ import {
   Inventory,
   TrendingUp,
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();

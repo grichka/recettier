@@ -9,7 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Google } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginPage: React.FC = () => {
   const { signIn, isLoading, error } = useAuth();

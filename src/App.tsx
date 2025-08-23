@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { theme } from './utils/theme';
 import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';

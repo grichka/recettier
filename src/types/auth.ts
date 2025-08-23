@@ -12,3 +12,8 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface AuthContextType extends AuthState {
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
+}

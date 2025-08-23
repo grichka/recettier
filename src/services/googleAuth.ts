@@ -9,6 +9,28 @@ interface TokenResponse {
   token_type: string;
 }
 
+interface TokenClient {
+  callback?: (tokenResponse: TokenResponse) => void;
+  requestAccessToken: (options?: { prompt?: string }) => void;
+}
+
+interface GoogleUser {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
+interface GoogleUserWithMethods extends GoogleUser {
+  accessToken?: string;
+  getBasicProfile: () => {
+    getId: () => string;
+    getEmail: () => string;
+    getName: () => string;
+    getImageUrl: () => string;
+  };
+}
+
 interface StoredAuthState {
   user: {
     id: string;
@@ -25,8 +47,8 @@ export class GoogleAuthService {
   private static instance: GoogleAuthService;
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
-  private tokenClient: any = null;
-  private currentUser: any = null;
+  private tokenClient: TokenClient | null = null;
+  private currentUser: GoogleUser | null = null;
   private accessToken: string | null = null;
   private tokenExpiresAt: number | null = null;
   private static readonly AUTH_STORAGE_KEY = 'recettier_auth_state';
@@ -82,11 +104,15 @@ export class GoogleAuthService {
           this.accessToken = tokenResponse.access_token;
           this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
           // Restore original callback
-          this.tokenClient.callback = originalCallback;
+          if (this.tokenClient && originalCallback) {
+            this.tokenClient.callback = originalCallback;
+          }
           resolve();
         } else {
           // Restore original callback
-          this.tokenClient.callback = originalCallback;
+          if (this.tokenClient && originalCallback) {
+            this.tokenClient.callback = originalCallback;
+          }
           reject(new Error('Failed to get access token'));
         }
       };
@@ -155,7 +181,7 @@ export class GoogleAuthService {
           this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
           this.fetchUserInfo();
         },
-        error_callback: (error: any) => {
+        error_callback: (error: Error | unknown) => {
           console.error('Token request error:', error);
         }
       });
@@ -164,7 +190,7 @@ export class GoogleAuthService {
       if (this.currentUser) {
         try {
           await this.refreshTokenSilently();
-        } catch (error) {
+        } catch {
           console.log('Silent token refresh failed, user will need to sign in again');
           this.currentUser = null;
           this.clearAuthState();
@@ -244,12 +270,17 @@ export class GoogleAuthService {
     }
   }
 
-  async signIn(): Promise<any> {
+  async signIn(): Promise<GoogleUserWithMethods> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     return new Promise((resolve, reject) => {
+      if (!this.tokenClient) {
+        reject(new Error('Token client not initialized'));
+        return;
+      }
+
       const originalCallback = this.tokenClient.callback;
       
       this.tokenClient.callback = async (tokenResponse: TokenResponse) => {
@@ -262,19 +293,21 @@ export class GoogleAuthService {
           await this.fetchUserInfo();
           
           if (this.currentUser) {
-            const user = {
+            const user: GoogleUserWithMethods = {
               ...this.currentUser,
               accessToken: this.accessToken,
               getBasicProfile: () => ({
-                getId: () => this.currentUser.id,
-                getEmail: () => this.currentUser.email,
-                getName: () => this.currentUser.name,
-                getImageUrl: () => this.currentUser.picture,
+                getId: () => this.currentUser!.id,
+                getEmail: () => this.currentUser!.email,
+                getName: () => this.currentUser!.name,
+                getImageUrl: () => this.currentUser!.picture,
               })
             };
             
             // Restore original callback
-            this.tokenClient.callback = originalCallback;
+            if (this.tokenClient && originalCallback) {
+              this.tokenClient.callback = originalCallback;
+            }
             resolve(user);
           } else {
             reject(new Error('Failed to get user information'));
@@ -285,7 +318,7 @@ export class GoogleAuthService {
       };
 
       // Request access token - this will open OAuth popup
-      this.tokenClient.requestAccessToken();
+      this.tokenClient?.requestAccessToken();
     });
   }
 
@@ -304,16 +337,16 @@ export class GoogleAuthService {
     this.clearAuthState();
   }
 
-  getCurrentUser(): any | null {
+  getCurrentUser(): GoogleUserWithMethods | null {
     if (!this.isInitialized || !this.currentUser) return null;
 
     return {
       ...this.currentUser,
       getBasicProfile: () => ({
-        getId: () => this.currentUser.id,
-        getEmail: () => this.currentUser.email,
-        getName: () => this.currentUser.name,
-        getImageUrl: () => this.currentUser.picture,
+        getId: () => this.currentUser!.id,
+        getEmail: () => this.currentUser!.email,
+        getName: () => this.currentUser!.name,
+        getImageUrl: () => this.currentUser!.picture,
       })
     };
   }
@@ -346,7 +379,7 @@ export class GoogleAuthService {
       try {
         await this.refreshTokenSilently();
         return true;
-      } catch (error) {
+      } catch {
         console.log('Silent token refresh failed');
         return false;
       }

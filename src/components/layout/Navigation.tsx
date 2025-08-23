@@ -26,7 +26,7 @@ import {
   Settings,
   Logout,
 } from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 interface NavigationProps {
   onMenuItemClick?: (path: string) => void;
