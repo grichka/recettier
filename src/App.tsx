@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { theme } from './utils/theme';
+import { initializeSecurity } from './utils/security';
 import Layout from './components/layout/Layout';
+import PWAInstallPrompt from './components/common/PWAInstallPrompt';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import RecipesPage from './pages/RecipesPage';
@@ -56,11 +58,17 @@ const AppContent: React.FC = () => {
   return (
     <Layout onNavigate={handleNavigate}>
       {renderPage()}
+      <PWAInstallPrompt />
     </Layout>
   );
 };
 
 function App() {
+  // Initialize security measures on app startup
+  useEffect(() => {
+    initializeSecurity();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

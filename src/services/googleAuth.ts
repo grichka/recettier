@@ -2,6 +2,15 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
 
+import { TokenSecurity } from '../utils/security';
+
+interface GoogleUserInfo {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
 interface TokenResponse {
   access_token: string;
   expires_in: number;
@@ -61,20 +70,53 @@ export class GoogleAuthService {
   }
 
   private saveAuthState(): void {
-    const authState: StoredAuthState = {
-      user: this.currentUser,
-      lastAuthTime: Date.now(),
-    };
-    localStorage.setItem(GoogleAuthService.AUTH_STORAGE_KEY, JSON.stringify(authState));
+    if (!this.currentUser) return;
+    
+    try {
+      const authState: StoredAuthState = {
+        user: this.currentUser,
+        lastAuthTime: Date.now(),
+      };
+      
+      // Encrypt sensitive data before storing
+      const encryptedState = TokenSecurity.encryptToken(JSON.stringify(authState));
+      localStorage.setItem(GoogleAuthService.AUTH_STORAGE_KEY, encryptedState);
+      
+      TokenSecurity.logSecurityEvent('auth_state_saved', { userId: this.currentUser.id });
+    } catch (error) {
+      console.error('Failed to save auth state:', error);
+      TokenSecurity.logSecurityEvent('auth_state_save_failed', { error: error });
+    }
   }
 
   private loadAuthState(): StoredAuthState | null {
     try {
       const stored = localStorage.getItem(GoogleAuthService.AUTH_STORAGE_KEY);
       if (!stored) return null;
-      return JSON.parse(stored);
+      
+      // Decrypt stored data
+      const decryptedData = TokenSecurity.decryptToken(stored);
+      const authState = JSON.parse(decryptedData);
+      
+      // Validate auth state structure
+      if (!authState.user || !authState.lastAuthTime) {
+        TokenSecurity.logSecurityEvent('invalid_auth_state_format');
+        this.clearAuthState();
+        return null;
+      }
+      
+      // Check if auth state is too old (security measure)
+      const authAge = Date.now() - authState.lastAuthTime;
+      if (authAge > 24 * 60 * 60 * 1000) { // 24 hours
+        TokenSecurity.logSecurityEvent('auth_state_expired', { age: authAge });
+        this.clearAuthState();
+        return null;
+      }
+      
+      return authState;
     } catch (error) {
       console.error('Failed to load auth state from localStorage:', error);
+      TokenSecurity.logSecurityEvent('auth_state_load_failed', { error: error });
       this.clearAuthState();
       return null;
     }
@@ -82,12 +124,20 @@ export class GoogleAuthService {
 
   private clearAuthState(): void {
     localStorage.removeItem(GoogleAuthService.AUTH_STORAGE_KEY);
+    TokenSecurity.logSecurityEvent('auth_state_cleared');
   }
 
   private isTokenValid(expiresAt: number | null): boolean {
     if (!expiresAt) return false;
     // Add 5 minute buffer to account for network delays
-    return Date.now() < (expiresAt - 5 * 60 * 1000);
+    const buffer = 5 * 60 * 1000;
+    const isValid = Date.now() < (expiresAt - buffer);
+    
+    if (!isValid) {
+      TokenSecurity.logSecurityEvent('token_expired', { expiresAt });
+    }
+    
+    return isValid;
   }
 
   private async refreshTokenSilently(): Promise<void> {
@@ -247,14 +297,17 @@ export class GoogleAuthService {
     if (!this.accessToken) return;
 
     try {
+      // Use direct fetch for Google API userinfo endpoint
       const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Accept': 'application/json',
+        },
       });
 
       if (response.ok) {
-        const userInfo = await response.json();
+        const userInfo: GoogleUserInfo = await response.json();
         this.currentUser = {
           id: userInfo.id,
           email: userInfo.email,
@@ -264,9 +317,18 @@ export class GoogleAuthService {
         
         // Save authentication state to localStorage
         this.saveAuthState();
+        
+        TokenSecurity.logSecurityEvent('user_info_fetched', { userId: userInfo.id });
+      } else {
+        console.error('Failed to fetch user info: HTTP', response.status, response.statusText);
+        TokenSecurity.logSecurityEvent('user_info_fetch_failed', { 
+          status: response.status, 
+          statusText: response.statusText 
+        });
       }
     } catch (error) {
       console.error('Failed to fetch user info:', error);
+      TokenSecurity.logSecurityEvent('user_info_fetch_failed', { error: error });
     }
   }
 
@@ -284,36 +346,45 @@ export class GoogleAuthService {
       const originalCallback = this.tokenClient.callback;
       
       this.tokenClient.callback = async (tokenResponse: TokenResponse) => {
-        if (tokenResponse.access_token) {
-          this.accessToken = tokenResponse.access_token;
-          // Calculate expiration time
-          this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
-          
-          // Fetch user info
-          await this.fetchUserInfo();
-          
-          if (this.currentUser) {
-            const user: GoogleUserWithMethods = {
-              ...this.currentUser,
-              accessToken: this.accessToken,
-              getBasicProfile: () => ({
-                getId: () => this.currentUser!.id,
-                getEmail: () => this.currentUser!.email,
-                getName: () => this.currentUser!.name,
-                getImageUrl: () => this.currentUser!.picture,
-              })
-            };
+        try {
+          if (tokenResponse.access_token) {
+            this.accessToken = tokenResponse.access_token;
+            // Calculate expiration time
+            this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
             
-            // Restore original callback
-            if (this.tokenClient && originalCallback) {
-              this.tokenClient.callback = originalCallback;
+            console.log('Access token received, fetching user info...');
+            
+            // Fetch user info
+            await this.fetchUserInfo();
+            
+            if (this.currentUser) {
+              const user: GoogleUserWithMethods = {
+                ...this.currentUser,
+                accessToken: this.accessToken,
+                getBasicProfile: () => ({
+                  getId: () => this.currentUser!.id,
+                  getEmail: () => this.currentUser!.email,
+                  getName: () => this.currentUser!.name,
+                  getImageUrl: () => this.currentUser!.picture,
+                })
+              };
+              
+              // Restore original callback
+              if (this.tokenClient && originalCallback) {
+                this.tokenClient.callback = originalCallback;
+              }
+              resolve(user);
+            } else {
+              console.error('User info fetch succeeded but currentUser is null');
+              reject(new Error('Failed to get user information: User data not available after fetch'));
             }
-            resolve(user);
           } else {
-            reject(new Error('Failed to get user information'));
+            console.error('No access token received from Google');
+            reject(new Error('Failed to get access token from Google'));
           }
-        } else {
-          reject(new Error('Failed to get access token'));
+        } catch (error) {
+          console.error('Error in token callback:', error);
+          reject(new Error(`Sign in failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
         }
       };
 
