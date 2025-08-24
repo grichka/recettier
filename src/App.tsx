@@ -22,6 +22,11 @@ const AppContent: React.FC = () => {
   };
 
   const renderPage = () => {
+    // Allow access to settings even when not authenticated
+    if (currentPage === '/settings') {
+      return <SettingsPage onNavigateBack={!isAuthenticated ? () => setCurrentPage('/') : undefined} />;
+    }
+    
     switch (currentPage) {
       case '/':
         return <DashboardPage />;
@@ -31,8 +36,6 @@ const AppContent: React.FC = () => {
         return <ShoppingPage />;
       case '/ingredients':
         return <IngredientsPage />;
-      case '/settings':
-        return <SettingsPage />;
       default:
         return <DashboardPage />;
     }
@@ -51,8 +54,13 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
+  if (!isAuthenticated && currentPage !== '/settings') {
+    return <LoginPage onNavigateToSettings={() => setCurrentPage('/settings')} />;
+  }
+
+  // If not authenticated but on settings page, show settings without layout
+  if (!isAuthenticated && currentPage === '/settings') {
+    return <SettingsPage onNavigateBack={() => setCurrentPage('/')} />;
   }
 
   return (

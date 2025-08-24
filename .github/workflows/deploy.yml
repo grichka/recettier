@@ -33,7 +33,7 @@ jobs:
       run: npm run build
       env:
         VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+        # API key is now provided by users, not bundled in build
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3

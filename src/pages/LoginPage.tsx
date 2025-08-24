@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Paper,
@@ -7,16 +7,25 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Link,
 } from '@mui/material';
 import { Google } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 
-const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  onNavigateToSettings?: () => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSettings }) => {
   const { signIn, isLoading, error } = useAuth();
+  const [showApiKeyInfo, setShowApiKeyInfo] = useState(false);
 
   const handleSignIn = async () => {
     await signIn();
   };
+
+  // Check if the error is related to API key configuration
+  const isApiKeyError = error && error.includes('API key');
 
   return (
     <Container maxWidth="sm">
@@ -67,8 +76,68 @@ const LoginPage: React.FC = () => {
 
           {/* Error Display */}
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert 
+              severity={isApiKeyError ? "warning" : "error"} 
+              sx={{ mb: 3 }}
+            >
               {error}
+              {isApiKeyError && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    You need to configure your Google API key before using Google Drive features.{' '}
+                    <Link 
+                      component="button" 
+                      onClick={() => setShowApiKeyInfo(!showApiKeyInfo)}
+                      sx={{ textDecoration: 'none' }}
+                    >
+                      Learn more
+                    </Link>
+                  </Typography>
+                  {onNavigateToSettings && (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={onNavigateToSettings}
+                      sx={{ 
+                        mt: 1,
+                        minWidth: 140,
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Go to Settings
+                    </Button>
+                  )}
+                </Box>
+              )}
+            </Alert>
+          )}
+
+          {/* API Key Info */}
+          {showApiKeyInfo && (
+            <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Why do I need my own API key?
+              </Typography>
+              <Typography variant="body2" paragraph>
+                For security and privacy, this app doesn't include Google API keys. 
+                You provide your own key which ensures:
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, my: 1 }}>
+                <li><Typography variant="body2">Your data stays under your control</Typography></li>
+                <li><Typography variant="body2">No usage limits shared with other users</Typography></li>
+                <li><Typography variant="body2">Enhanced security - no keys in the app code</Typography></li>
+              </Box>
+              <Typography variant="body2">
+                <Link 
+                  href="https://console.cloud.google.com/apis/credentials" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  Get your free API key here
+                </Link>
+                . After signing in, you can configure it in the Settings page.
+              </Typography>
             </Alert>
           )}
 

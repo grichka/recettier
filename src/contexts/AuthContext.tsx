@@ -22,6 +22,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const initializeAuth = async () => {
     try {
+      // First check if Google service can be used (API key is configured)
+      const canUseGoogleService = await googleAuthService.canUseService();
+      
+      if (!canUseGoogleService) {
+        // No API key configured - this is normal for first-time users
+        console.log('Google API key not configured. Google Drive features will be unavailable until configured in Settings.');
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: null, // Don't treat this as an error
+        }));
+        return;
+      }
+
       await googleAuthService.initialize();
       
       // Check if we have user profile information and try to get a valid token
@@ -51,18 +65,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
       
-      // No valid authentication found
+      // No valid authentication found, but API key is configured
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
       }));
     } catch (error) {
       console.error('Auth initialization error:', error);
+      
+      // Provide a more user-friendly error message
+      let errorMessage = 'Failed to initialize authentication';
+      if (error instanceof Error && error.message.includes('API key not configured')) {
+        errorMessage = 'Google API key not configured. Please set up your API key in Settings to use Google Drive features.';
+      }
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
-        error: 'Failed to initialize authentication',
+        error: errorMessage,
       });
     }
   };
@@ -70,6 +91,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      // Check if Google service can be used (API key is configured)
+      const canUseGoogleService = await googleAuthService.canUseService();
+      
+      if (!canUseGoogleService) {
+        throw new Error('Google API key not configured. Please set up your API key in Settings before signing in.');
+      }
       
       // Initialize first to set up the token client callback
       await googleAuthService.initialize();
@@ -94,11 +122,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      let errorMessage = 'Failed to sign in';
+      if (error instanceof Error) {
+        if (error.message.includes('API key not configured')) {
+          errorMessage = 'Please configure your Google API key in Settings first.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
-        error: 'Failed to sign in',
+        error: errorMessage,
       });
     }
   };
@@ -125,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...authState,
     signIn,
     signOut,
+    reinitialize: initializeAuth, // Add this to allow re-initialization
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

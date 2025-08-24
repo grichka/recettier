@@ -3,6 +3,7 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
 
 import { TokenSecurity } from '../utils/security';
+import { apiKeyStorage } from '../utils/apiKeyStorage';
 
 interface GoogleUserInfo {
   id: string;
@@ -216,8 +217,14 @@ export class GoogleAuthService {
         });
       });
 
+      // Get user's API key from secure storage
+      const userApiKey = await apiKeyStorage.getApiKey();
+      if (!userApiKey) {
+        throw new Error('Google API key not configured. Please set up your API key in Settings.');
+      }
+
       await window.gapi.client.init({
-        apiKey: import.meta.env.VITE_GOOGLE_API_KEY || '',
+        apiKey: userApiKey,
         discoveryDocs: [DISCOVERY_DOC],
       });
 
@@ -439,6 +446,20 @@ export class GoogleAuthService {
 
   hasUserProfile(): boolean {
     return !!this.currentUser;
+  }
+
+  /**
+   * Check if API key is configured
+   */
+  async hasApiKey(): Promise<boolean> {
+    return await apiKeyStorage.hasApiKey();
+  }
+
+  /**
+   * Check if the service can be used (API key is configured)
+   */
+  async canUseService(): Promise<boolean> {
+    return await this.hasApiKey();
   }
 
   async ensureValidToken(): Promise<boolean> {

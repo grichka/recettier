@@ -4,7 +4,14 @@
 
 A modern React PWA for managing recipes, ingredients, and shopping lists with Google Drive storage.
 
-## 🚀 Features
+## � Security & Privacy
+
+- **No API Keys in Code**: Users provide their own Google API keys through a secure interface
+- **Local Encryption**: API keys are encrypted using Web Crypto API and stored in IndexedDB
+- **Your Data, Your Control**: All data stays in your Google Drive, no third-party servers
+- **Privacy First**: No tracking, analytics, or external data collection
+
+## �🚀 Features
 
 - **Recipe Management**: Store and organize your favorite recipes
 - **Smart Shopping Lists**: Generate shopping lists from your recipes
@@ -48,8 +55,18 @@ npm run deploy
 ## 📋 Requirements
 
 - Node.js 20+
-- Google OAuth 2.0 credentials
+- Google Cloud Project with Drive API enabled
 - Modern web browser
+
+### Getting Your Google API Key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google Drive API
+4. Create credentials (API Key)
+5. Add the API key through the app's Settings page
+
+**Note**: The app will guide you through this process on first use.
 
 ---
 
