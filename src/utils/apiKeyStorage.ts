@@ -228,6 +228,9 @@ class ApiKeyStorage {
 // Create and export a singleton instance
 export const apiKeyStorage = new ApiKeyStorage();
 
+// Export the class for static method access and testing
+export { ApiKeyStorage };
+
 // Initialize session ID if not present
 if (!sessionStorage.getItem('recettier_session')) {
   sessionStorage.setItem('recettier_session', crypto.randomUUID());

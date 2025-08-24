@@ -2,6 +2,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { googleAuthService } from '../../src/services/googleAuth'
 
+// Mock the API key storage module
+vi.mock('../../src/utils/apiKeyStorage', () => ({
+  apiKeyStorage: {
+    getApiKey: vi.fn(),
+    setApiKey: vi.fn(),
+    removeApiKey: vi.fn(),
+    hasApiKey: vi.fn(),
+    clearAllData: vi.fn(),
+  },
+  ApiKeyStorage: {
+    validateApiKey: vi.fn(),
+  },
+}))
+
+// Import the mocked storage
+import { apiKeyStorage } from '../../src/utils/apiKeyStorage'
+
 // Mock Google APIs
 const mockTokenClient = {
   callback: vi.fn(),
@@ -20,6 +37,9 @@ describe('Google Auth Service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Mock API key storage to return a valid API key
+    ;(apiKeyStorage.getApiKey as any).mockResolvedValue('test-api-key-12345')
     
     // Create a fresh instance for each test
     authService = googleAuthService
