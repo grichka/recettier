@@ -12,7 +12,7 @@ import {
   DarkMode,
   Brightness6,
 } from '@mui/icons-material';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../hooks/useTheme';
 
 interface ThemeToggleProps {
   showLabel?: boolean;

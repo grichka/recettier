@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react'
 import type { ReactElement } from 'react'
 import { render } from '@testing-library/react'
@@ -6,8 +7,8 @@ import { vi } from 'vitest'
 import { ThemeProvider } from '@mui/material/styles'
 import { CssBaseline } from '@mui/material'
 import { BrowserRouter } from 'react-router-dom'
-import { AuthProvider } from '../contexts/AuthContext'
-import { theme } from '../utils/theme'
+import { AuthProvider } from '../src/contexts/AuthContext'
+import { theme } from '../src/utils/theme'
 
 // Enhanced window API mocking for React hooks
 export const setupWindowMocks = () => {

@@ -1,24 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { lightTheme, darkTheme } from '../utils/theme';
-
-export type ThemeMode = 'light' | 'dark';
-
-interface ThemeContextType {
-  mode: ThemeMode;
-  toggleTheme: () => void;
-  setTheme: (mode: ThemeMode) => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+import { ThemeContext, type ThemeMode, type ThemeContextType } from './ThemeContext';
 
 interface ThemeProviderProps {
   children: ReactNode;
   initialTheme?: ThemeMode;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialTheme }) => {
+const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialTheme }) => {
   const [mode, setMode] = useState<ThemeMode>(() => {
     // Use initialTheme prop if provided (for testing)
     if (initialTheme) {
@@ -88,10 +79,5 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialT
   );
 };
 
-export const useTheme = (): ThemeContextType => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+// Export only the component to satisfy react-refresh
+export { ThemeProvider };

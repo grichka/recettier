@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThemeProvider } from '../../src/contexts/ThemeContext'
+import { ThemeProvider } from '../../src/contexts/ThemeProvider'
 import ThemeToggle from '../../src/components/common/ThemeToggle'
 import { CssBaseline } from '@mui/material'
 
@@ -76,7 +76,7 @@ describe('Theme Context and Components', () => {
     })
 
     it('should use system preference when no saved theme', () => {
-      ;(window.matchMedia as any).mockImplementation((query: string) => ({
+      ;(window.matchMedia as ReturnType<typeof vi.fn>).mockImplementation((query: string) => ({
         matches: query === '(prefers-color-scheme: dark)',
         media: query,
         onchange: null,

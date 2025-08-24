@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider } from './contexts/ThemeProvider';
 import { useAuth } from './hooks/useAuth';
 import { initializeSecurity } from './utils/security';
 import Layout from './components/layout/Layout';

@@ -135,7 +135,7 @@ Object.defineProperty(navigator, 'storage', {
 })
 
 // Expose mocks globally for test access
-;(global as any).mockWindowAPI = {
+;(global as typeof global & { mockWindowAPI: unknown }).mockWindowAPI = {
   addEventListener: mockAddEventListener,
   removeEventListener: mockRemoveEventListener,
   dispatchEvent: mockDispatchEvent,

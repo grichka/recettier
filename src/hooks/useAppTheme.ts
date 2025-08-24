@@ -1,3 +1,3 @@
-import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
+import { useTheme as useCustomTheme } from './useTheme';
 
 export const useAppTheme = useCustomTheme;

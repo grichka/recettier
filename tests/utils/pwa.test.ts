@@ -2,6 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { pwaService, usePWA } from '../../src/utils/pwa'
 
+// Type definition for the global mock API
+interface MockWindowAPI {
+  addEventListener: ReturnType<typeof vi.fn>
+  removeEventListener: ReturnType<typeof vi.fn>
+  dispatchEvent: ReturnType<typeof vi.fn>
+  matchMedia: ReturnType<typeof vi.fn>
+}
+
+declare global {
+  var mockWindowAPI: MockWindowAPI
+}
+
 // Mock the window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -40,7 +52,7 @@ describe('PWA Utils', () => {
   describe('PWAService', () => {
     describe('Install Status Detection', () => {
       it('should detect when app is running in standalone mode', () => {
-        ;(window.matchMedia as any).mockImplementation((query: string) => ({
+        ;(window.matchMedia as ReturnType<typeof vi.fn>).mockImplementation((query: string) => ({
           matches: query === '(display-mode: standalone)',
           media: query,
           onchange: null,
@@ -118,7 +130,7 @@ describe('PWA Utils', () => {
           prototype: {
             sync: {},
           },
-        } as any
+        } as typeof ServiceWorkerRegistration
 
         Object.defineProperty(global, 'window', {
           value: {
@@ -148,7 +160,7 @@ describe('PWA Utils', () => {
         // Mock ServiceWorkerRegistration prototype without sync
         global.ServiceWorkerRegistration = {
           prototype: {},
-        } as any
+        } as typeof ServiceWorkerRegistration
 
         Object.defineProperty(global, 'window', {
           value: {
@@ -218,12 +230,12 @@ describe('PWA Utils', () => {
       
       // Ensure window APIs are properly set up for React rendering
       // Assign directly since properties already exist
-      window.addEventListener = (global as any).mockWindowAPI.addEventListener
-      window.removeEventListener = (global as any).mockWindowAPI.removeEventListener
-      window.matchMedia = (global as any).mockWindowAPI.matchMedia
+      window.addEventListener = global.mockWindowAPI.addEventListener
+      window.removeEventListener = global.mockWindowAPI.removeEventListener
+      window.matchMedia = global.mockWindowAPI.matchMedia
       
       // Reset window API mocks
-      const mockAPI = (global as any).mockWindowAPI
+      const mockAPI = global.mockWindowAPI
       if (mockAPI) {
         mockAPI.addEventListener.mockClear()
         mockAPI.removeEventListener.mockClear()
@@ -264,14 +276,14 @@ describe('PWA Utils', () => {
         prototype: {
           sync: {},
         },
-      } as any
+      } as typeof ServiceWorkerRegistration
 
       Object.defineProperty(global, 'window', {
         value: {
           ...global.window,
-          addEventListener: (global as any).mockWindowAPI.addEventListener,
-          removeEventListener: (global as any).mockWindowAPI.removeEventListener,
-          matchMedia: (global as any).mockWindowAPI.matchMedia,
+          addEventListener: global.mockWindowAPI.addEventListener,
+          removeEventListener: global.mockWindowAPI.removeEventListener,
+          matchMedia: global.mockWindowAPI.matchMedia,
           ServiceWorkerRegistration: {
             prototype: {
               sync: {},
@@ -299,7 +311,7 @@ describe('PWA Utils', () => {
 
     it('should listen for PWA update events', () => {
       // Use the global mock instead of spying on window
-      const mockAPI = (global as any).mockWindowAPI
+      const mockAPI = global.mockWindowAPI
       
       renderHook(() => usePWA())
 
