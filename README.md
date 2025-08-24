@@ -2,7 +2,7 @@
 
 **Store recipes. Build lists. Cook faster.**
 
-A modern React SPA for managing recipes, ingredients, and shopping lists with Google Drive storage.
+A modern React PWA for managing recipes, ingredients, and shopping lists with Google Drive storage.
 
 ## 🚀 Features
 
@@ -11,7 +11,7 @@ A modern React SPA for managing recipes, ingredients, and shopping lists with Go
 - **Ingredient Registry**: Centralized ingredient database with auto-complete
 - **Google Drive Storage**: Your data stays in your own Google Drive
 - **Responsive Design**: Works great on desktop and mobile
-- **Offline Ready**: Built with PWA capabilities (coming soon)
+- **Offline Ready**: Built with PWA capabilities
 
 ## 🏗️ Architecture
 
@@ -21,12 +21,6 @@ A modern React SPA for managing recipes, ingredients, and shopping lists with Go
 - **Storage**: Google Drive API
 - **State Management**: Zustand + React Context
 - **Deployment**: GitHub Pages
-
-## 🎯 Current Status
-
-✅ **Completed**: Core structure, authentication, navigation, and dashboard  
-🚧 **In Progress**: This is the initial setup with working authentication and UI  
-📋 **Planned**: Recipe CRUD, shopping lists, Google Drive integration
 
 ## 🛠️ Development
 
@@ -53,21 +47,9 @@ npm run deploy
 
 ## 📋 Requirements
 
-- Node.js 20+ (recommended)
+- Node.js 20+
 - Google OAuth 2.0 credentials
 - Modern web browser
-
-## 🎨 Screenshots
-
-*Dashboard showing welcome message and quick stats*
-
-## 🤝 Contributing
-
-This is a single-user application designed for personal recipe management. Feel free to fork and customize for your own needs!
-
-## 📄 License
-
-MIT License - feel free to use this as a starting point for your own recipe management app.
 
 ---
 
