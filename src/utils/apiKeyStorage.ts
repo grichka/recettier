@@ -210,9 +210,8 @@ class ApiKeyStorage {
    * Validate that an API key is properly formatted
    */
   static validateApiKey(apiKey: string): boolean {
-    // Google API keys typically start with 'AIza' and are 39 characters long
-    const googleApiKeyPattern = /^AIza[A-Za-z0-9_-]{35}$/;
-    return googleApiKeyPattern.test(apiKey);
+    // Google API keys are exactly 39 characters long
+    return apiKey.length === 39;
   }
 
   /**

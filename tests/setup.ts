@@ -271,7 +271,7 @@ Object.defineProperty(global, 'atob', {
         throw new Error('Invalid character')
       }
       return Buffer.from(str, 'base64').toString('binary')
-    } catch (error) {
+    } catch {
       throw new Error('Invalid character')
     }
   },
@@ -290,8 +290,23 @@ Object.defineProperty(window, 'sessionStorage', {
   writable: true,
 })
 
+// Define the mock window API type
+interface MockWindowAPI {
+  addEventListener: typeof mockAddEventListener
+  removeEventListener: typeof mockRemoveEventListener
+  dispatchEvent: typeof mockDispatchEvent
+  matchMedia: typeof window.matchMedia
+  indexedDB: typeof mockIndexedDB
+  crypto: {
+    subtle: typeof mockCryptoSubtle
+    getRandomValues: ReturnType<typeof vi.fn>
+    randomUUID: ReturnType<typeof vi.fn>
+  }
+  localStorage: typeof localStorageMock
+}
+
 // Expose mocks globally for test access
-;(global as typeof global & { mockWindowAPI: any }).mockWindowAPI = {
+;(global as typeof global & { mockWindowAPI: MockWindowAPI }).mockWindowAPI = {
   addEventListener: mockAddEventListener,
   removeEventListener: mockRemoveEventListener,
   dispatchEvent: mockDispatchEvent,

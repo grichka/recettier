@@ -506,7 +506,7 @@ export class GoogleAuthService {
       const isValid = authAge <= 24 * 60 * 60 * 1000;
       
       return isValid;
-    } catch (error) {
+    } catch {
       // If we can't decrypt or parse, assume no valid stored state
       return false;
     }

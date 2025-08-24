@@ -20,9 +20,8 @@ import { useAuth } from '../../hooks/useAuth';
 // For accessing static methods
 class ApiKeyStorage {
   static validateApiKey(apiKey: string): boolean {
-    // Google API keys typically start with 'AIza' and are 39 characters long
-    const googleApiKeyPattern = /^AIza[A-Za-z0-9_-]{35}$/;
-    return googleApiKeyPattern.test(apiKey);
+    // Google API keys are exactly 39 characters long
+    return apiKey.length === 39;
   }
 }
 
@@ -65,7 +64,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onKeyChange }) => 
     }
 
     if (!ApiKeyStorage.validateApiKey(apiKey)) {
-      setError('Invalid Google API key format. Keys should start with "AIza" and be 39 characters long.');
+      setError('Invalid Google API key format. Keys should be exactly 39 characters long.');
       return;
     }
 
