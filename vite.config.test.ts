@@ -11,6 +11,9 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     css: true,
     include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json'
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
