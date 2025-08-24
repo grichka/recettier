@@ -68,7 +68,65 @@ declare global {
             apiKey: string;
             discoveryDocs: string[];
           }) => Promise<void>;
-          drive?: unknown;
+          drive: {
+            files: {
+              list: (params: {
+                q?: string;
+                fields?: string;
+                spaces?: string;
+                orderBy?: string;
+                pageSize?: number;
+                pageToken?: string;
+              }) => Promise<{
+                result: {
+                  files?: Array<{
+                    id?: string;
+                    name?: string;
+                    mimeType?: string;
+                    parents?: string[];
+                    createdTime?: string;
+                    modifiedTime?: string;
+                    size?: string;
+                  }>;
+                  nextPageToken?: string;
+                };
+              }>;
+              get: (params: {
+                fileId: string;
+                fields?: string;
+                alt?: string;
+              }) => Promise<{
+                result: {
+                  id?: string;
+                  name?: string;
+                  mimeType?: string;
+                  parents?: string[];
+                  createdTime?: string;
+                  modifiedTime?: string;
+                  size?: string;
+                };
+                body?: string;
+              }>;
+              create: (params: {
+                resource: {
+                  name: string;
+                  mimeType: string;
+                  parents?: string[];
+                };
+                fields?: string;
+              }) => Promise<{
+                result: {
+                  id?: string;
+                  name?: string;
+                  mimeType?: string;
+                  parents?: string[];
+                };
+              }>;
+              delete: (params: {
+                fileId: string;
+              }) => Promise<void>;
+            };
+          };
         };
       };
   }
