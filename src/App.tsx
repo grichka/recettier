@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';
-import { theme } from './utils/theme';
 import { initializeSecurity } from './utils/security';
 import Layout from './components/layout/Layout';
 import PWAInstallPrompt from './components/common/PWAInstallPrompt';
@@ -70,7 +70,7 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <CssBaseline />
       <AuthProvider>
         <AppContent />

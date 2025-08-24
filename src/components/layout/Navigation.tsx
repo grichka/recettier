@@ -16,6 +16,7 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
+  Divider,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,6 +28,7 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
+import ThemeToggle from '../common/ThemeToggle';
 
 interface NavigationProps {
   onMenuItemClick?: (path: string) => void;
@@ -213,6 +215,8 @@ const Navigation: React.FC<NavigationProps> = ({ onMenuItemClick }) => {
           </ListItemIcon>
           Settings
         </MenuItem>
+        <ThemeToggle onClose={handleProfileMenuClose} />
+        <Divider />
         <MenuItem onClick={handleSignOut}>
           <ListItemIcon>
             <Logout fontSize="small" />
