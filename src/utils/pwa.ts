@@ -95,7 +95,7 @@ class PWAService {
   }
 
   public async getStorageEstimate(): Promise<StorageEstimate | null> {
-    if ('storage' in navigator && 'estimate' in navigator.storage) {
+    if ('storage' in navigator && navigator.storage && 'estimate' in navigator.storage) {
       try {
         const estimate = await navigator.storage.estimate();
         console.log('PWA: Storage estimate', estimate);

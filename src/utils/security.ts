@@ -141,7 +141,7 @@ class SecureHttpClient {
         urlObj.hostname === domain || urlObj.hostname.endsWith(`.${domain}`)
       );
       
-      if (!isAllowed && !urlObj.hostname.includes('localhost')) {
+      if (!isAllowed && !urlObj.hostname.includes('localhost') && urlObj.hostname !== 'localhost') {
         throw new Error(`Domain ${urlObj.hostname} is not in the allowed list`);
       }
     } catch (error) {
