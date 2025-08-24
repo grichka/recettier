@@ -62,6 +62,7 @@ export class GoogleAuthService {
   private accessToken: string | null = null;
   private tokenExpiresAt: number | null = null;
   private static readonly AUTH_STORAGE_KEY = 'recettier_auth_state';
+  private static readonly AUTH_STATE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
   static getInstance(): GoogleAuthService {
     if (!GoogleAuthService.instance) {
@@ -108,7 +109,7 @@ export class GoogleAuthService {
       
       // Check if auth state is too old (security measure)
       const authAge = Date.now() - authState.lastAuthTime;
-      if (authAge > 24 * 60 * 60 * 1000) { // 24 hours
+      if (authAge > GoogleAuthService.AUTH_STATE_EXPIRATION_MS) { // 24 hours
         TokenSecurity.logSecurityEvent('auth_state_expired', { age: authAge });
         this.clearAuthState();
         return null;

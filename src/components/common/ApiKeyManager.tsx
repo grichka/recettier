@@ -14,16 +14,8 @@ import {
   FormHelperText,
 } from '@mui/material';
 import { CheckCircle, Warning, Key } from '@mui/icons-material';
-import { apiKeyStorage } from '../../utils/apiKeyStorage';
+import { apiKeyStorage, ApiKeyStorage } from '../../utils/apiKeyStorage';
 import { useAuth } from '../../hooks/useAuth';
-
-// For accessing static methods
-class ApiKeyStorage {
-  static validateApiKey(apiKey: string): boolean {
-    // Google API keys are exactly 39 characters long
-    return apiKey.length === 39;
-  }
-}
 
 interface ApiKeyManagerProps {
   onKeyChange?: (hasKey: boolean) => void;
@@ -64,7 +56,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onKeyChange }) => 
     }
 
     if (!ApiKeyStorage.validateApiKey(apiKey)) {
-      setError('Invalid Google API key format. Keys should be exactly 39 characters long.');
+      setError('Invalid Google API key format. Keys should start with "AIza" and be exactly 39 characters long.');
       return;
     }
 

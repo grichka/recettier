@@ -98,7 +98,7 @@ describe('Security Utils', () => {
         })
       })
 
-      const httpClient = new (secureHttpClient as any).constructor('https://www.googleapis.com')
+      const httpClient = new (secureHttpClient as any).constructor({ maxRetries: 3 })
       const result = await httpClient.requestWithRetry({ url: 'https://www.googleapis.com/test', method: 'GET' }, 3)
       
       expect(result).toMatchObject({ 
@@ -111,12 +111,32 @@ describe('Security Utils', () => {
     it('should stop retrying after max attempts', async () => {
       global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
 
-      const httpClient = new (secureHttpClient as any).constructor('https://www.googleapis.com')
+      const httpClient = new (secureHttpClient as any).constructor({ maxRetries: 3 })
       
       await expect(httpClient.requestWithRetry({ url: 'https://www.googleapis.com/test', method: 'GET' }, 3)).rejects.toThrow('Network error')
       
       // 1 initial attempt + 3 retries = 4 total calls
       expect(global.fetch).toHaveBeenCalledTimes(4)
+    })
+
+    it('should use configurable options', () => {
+      const httpClient = new (secureHttpClient as any).constructor({ 
+        maxRetries: 5, 
+        defaultTimeout: 15000, 
+        retryDelay: 2000 
+      })
+      
+      expect(httpClient['maxRetries']).toBe(5)
+      expect(httpClient['defaultTimeout']).toBe(15000)
+      expect(httpClient['retryDelay']).toBe(2000)
+    })
+
+    it('should use default options when none provided', () => {
+      const httpClient = new (secureHttpClient as any).constructor()
+      
+      expect(httpClient['maxRetries']).toBe(3)
+      expect(httpClient['defaultTimeout']).toBe(10000)
+      expect(httpClient['retryDelay']).toBe(1000)
     })
     })
   })

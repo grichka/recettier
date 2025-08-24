@@ -11,6 +11,9 @@ vi.mock('../../src/utils/apiKeyStorage', () => ({
     removeApiKey: vi.fn(),
     hasApiKey: vi.fn(),
   },
+  ApiKeyStorage: {
+    validateApiKey: vi.fn(),
+  },
 }))
 
 // Mock the auth context
@@ -18,7 +21,7 @@ vi.mock('../../src/hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
 
-import { apiKeyStorage } from '../../src/utils/apiKeyStorage'
+import { apiKeyStorage, ApiKeyStorage } from '../../src/utils/apiKeyStorage'
 import { useAuth } from '../../src/hooks/useAuth'
 
 const MockedApiKeyStorage = apiKeyStorage as unknown as {
@@ -26,6 +29,10 @@ const MockedApiKeyStorage = apiKeyStorage as unknown as {
   storeApiKey: ReturnType<typeof vi.fn>
   removeApiKey: ReturnType<typeof vi.fn>
   hasApiKey: ReturnType<typeof vi.fn>
+}
+
+const MockedApiKeyStorageClass = ApiKeyStorage as unknown as {
+  validateApiKey: ReturnType<typeof vi.fn>
 }
 
 const MockedUseAuth = useAuth as ReturnType<typeof vi.fn>
@@ -52,6 +59,12 @@ describe('ApiKeyManager Component', () => {
     MockedApiKeyStorage.hasApiKey.mockResolvedValue(false)
     MockedApiKeyStorage.storeApiKey.mockResolvedValue(undefined)
     MockedApiKeyStorage.removeApiKey.mockResolvedValue(undefined)
+    
+    // Mock API key validation - return true for valid AIza keys, false for others
+    MockedApiKeyStorageClass.validateApiKey.mockImplementation((key: string) => {
+      const googleApiKeyRegex = /^AIza[0-9A-Za-z-_]{35}$/;
+      return googleApiKeyRegex.test(key);
+    })
   })
 
   describe('Initial State', () => {
@@ -71,7 +84,7 @@ describe('ApiKeyManager Component', () => {
     })
 
     it('should render with existing API key', async () => {
-      MockedApiKeyStorage.getApiKey.mockResolvedValue('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')
+      MockedApiKeyStorage.getApiKey.mockResolvedValue('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')
       MockedApiKeyStorage.hasApiKey.mockResolvedValue(true)
 
       render(
@@ -107,9 +120,9 @@ describe('ApiKeyManager Component', () => {
       })
 
       const input = screen.getByPlaceholderText('Enter your Google API key...')
-      fireEvent.change(input, { target: { value: 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901' } })
+      fireEvent.change(input, { target: { value: 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi' } })
 
-      expect(input).toHaveValue('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')
+      expect(input).toHaveValue('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')
     })
 
     it('should show validation error for invalid API key', async () => {
@@ -169,13 +182,13 @@ describe('ApiKeyManager Component', () => {
       })
 
       const input = screen.getByPlaceholderText('Enter your Google API key...')
-      fireEvent.change(input, { target: { value: 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901' } })
+      fireEvent.change(input, { target: { value: 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi' } })
 
       const saveButton = screen.getByText('Save')
       fireEvent.click(saveButton)
 
       await waitFor(() => {
-        expect(MockedApiKeyStorage.storeApiKey).toHaveBeenCalledWith('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')
+        expect(MockedApiKeyStorage.storeApiKey).toHaveBeenCalledWith('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')
         expect(mockReinitialize).toHaveBeenCalled()
       })
     })
@@ -198,7 +211,7 @@ describe('ApiKeyManager Component', () => {
       })
 
       const input = screen.getByPlaceholderText('Enter your Google API key...')
-      fireEvent.change(input, { target: { value: 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901' } })
+      fireEvent.change(input, { target: { value: 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi' } })
 
       const saveButton = screen.getByText('Save')
       fireEvent.click(saveButton)
@@ -212,7 +225,7 @@ describe('ApiKeyManager Component', () => {
 
   describe('Remove API Key', () => {
     beforeEach(() => {
-      MockedApiKeyStorage.getApiKey.mockResolvedValue('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')
+      MockedApiKeyStorage.getApiKey.mockResolvedValue('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')
       MockedApiKeyStorage.hasApiKey.mockResolvedValue(true)
     })
 
@@ -290,7 +303,7 @@ describe('ApiKeyManager Component', () => {
       })
 
       const input = screen.getByPlaceholderText('Enter your Google API key...')
-      fireEvent.change(input, { target: { value: 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901' } })
+      fireEvent.change(input, { target: { value: 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi' } })
 
       const saveButton = screen.getByText('Save')
       fireEvent.click(saveButton)
@@ -302,7 +315,7 @@ describe('ApiKeyManager Component', () => {
     })
 
     it('should show loading state while removing', async () => {
-      MockedApiKeyStorage.getApiKey.mockResolvedValue('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')
+      MockedApiKeyStorage.getApiKey.mockResolvedValue('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')
       MockedApiKeyStorage.hasApiKey.mockResolvedValue(true)
       
       // Mock a delayed promise
@@ -368,7 +381,7 @@ describe('ApiKeyManager Component', () => {
       })
 
       const input = screen.getByPlaceholderText('Enter your Google API key...')
-      fireEvent.change(input, { target: { value: 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901' } })
+      fireEvent.change(input, { target: { value: 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi' } })
 
       const saveButton = screen.getByText('Save')
       expect(saveButton).toBeEnabled()

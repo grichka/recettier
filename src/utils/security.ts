@@ -14,12 +14,21 @@ interface RequestResponse<T = unknown> {
   headers: Headers;
 }
 
-class SecureHttpClient {
-  private defaultTimeout = 10000; // 10 seconds
-  private maxRetries = 3;
-  private retryDelay = 1000; // 1 second
+interface SecureHttpClientOptions {
+  maxRetries?: number;
+  defaultTimeout?: number;
+  retryDelay?: number;
+}
 
-  constructor() {
+class SecureHttpClient {
+  private defaultTimeout: number;
+  private maxRetries: number;
+  private retryDelay: number;
+
+  constructor(options: SecureHttpClientOptions = {}) {
+    this.defaultTimeout = options.defaultTimeout ?? 10000; // 10 seconds
+    this.maxRetries = options.maxRetries ?? 3;
+    this.retryDelay = options.retryDelay ?? 1000; // 1 second
     this.setupRequestInterceptors();
   }
 

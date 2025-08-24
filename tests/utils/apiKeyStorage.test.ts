@@ -13,8 +13,10 @@ vi.mock('../../src/utils/apiKeyStorage', () => {
   // Create a real class for testing static methods
   class MockApiKeyStorage {
     static validateApiKey(apiKey: string): boolean {
-      // Google API keys are exactly 39 characters long
-      return apiKey.length === 39;
+      // Google API keys typically start with "AIza" and are 39 characters long,
+      // but formats may vary. This regex matches the most common format.
+      const googleApiKeyRegex = /^AIza[0-9A-Za-z-_]{35}$/;
+      return googleApiKeyRegex.test(apiKey);
     }
     
     async storeApiKey(apiKey: string): Promise<void> {
@@ -80,7 +82,7 @@ describe('API Key Storage', () => {
     })
 
     it('should store and retrieve an API key successfully', async () => {
-      const testApiKey = 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901'
+      const testApiKey = 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi'
       
       mockApiKeyStorage.storeApiKey.mockResolvedValue(undefined)
       mockApiKeyStorage.getApiKey.mockResolvedValue(testApiKey)
@@ -104,7 +106,7 @@ describe('API Key Storage', () => {
 
   describe('Validation', () => {
     it('should validate correct Google API key format', () => {
-      const validKey = 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901'
+      const validKey = 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi'
       
       // Access the static method through the constructor
       const ApiKeyStorageClass = apiKeyStorage.constructor as unknown as { validateApiKey: (key: string) => boolean }
@@ -116,9 +118,10 @@ describe('API Key Storage', () => {
       
       expect(ApiKeyStorageClass.validateApiKey('invalid-key')).toBe(false)
       expect(ApiKeyStorageClass.validateApiKey('too-short')).toBe(false)
-      expect(ApiKeyStorageClass.validateApiKey('aAbBcCdDeEfFgGhHiIjJkKlLmMnN123456789012345')).toBe(false) // too long
+      expect(ApiKeyStorageClass.validateApiKey('BIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghijk')).toBe(false) // wrong prefix
       expect(ApiKeyStorageClass.validateApiKey('')).toBe(false)
-      expect(ApiKeyStorageClass.validateApiKey('xYzAbCdEfGhIjKlMnOpQrStUvWxYz1234567')).toBe(false) // wrong length
+      expect(ApiKeyStorageClass.validateApiKey('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi123')).toBe(false) // too long
+      expect(ApiKeyStorageClass.validateApiKey('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcde')).toBe(false) // too short
     })
   })
 
@@ -168,7 +171,7 @@ describe('API Key Storage', () => {
 
   describe('Integration Scenarios', () => {
     it('should handle the full lifecycle of API key management', async () => {
-      const testApiKey = 'aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901'
+      const testApiKey = 'AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi'
       
       // Initially no key
       mockApiKeyStorage.hasApiKey.mockResolvedValue(false)
@@ -197,8 +200,8 @@ describe('API Key Storage', () => {
       const ApiKeyStorageClass = apiKeyStorage.constructor as unknown as { validateApiKey: (key: string) => boolean }
       
       // Test various API key formats - using clearly fake test keys
-      expect(ApiKeyStorageClass.validateApiKey('aAbBcCdDeEfFgGhHiIjJkKlLmMnN12345678901')).toBe(true)
-      expect(ApiKeyStorageClass.validateApiKey('xYzMOCK_API_KEY_NOT_REAL_TEST_123456789')).toBe(true)
+      expect(ApiKeyStorageClass.validateApiKey('AIzaSyDxKXxJQOejBxDKFj_XYZ123-abcdefghi')).toBe(true)
+      expect(ApiKeyStorageClass.validateApiKey('AIzaMOCK_API_KEY_NOT_REAL_TEST_12345678')).toBe(true)
       expect(ApiKeyStorageClass.validateApiKey('not-a-google-api-key')).toBe(false)
       expect(ApiKeyStorageClass.validateApiKey('test')).toBe(false) // too short
     })
