@@ -92,7 +92,7 @@ describe('Google Auth Service', () => {
 
   describe('Initialization', () => {
     it('should initialize Google APIs successfully', async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -111,7 +111,7 @@ describe('Google Auth Service', () => {
 
     it('should handle initialization errors gracefully', async () => {
       const loadError = new Error('Load failed')
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (callback && typeof callback.onerror === 'function') {
           callback.onerror(loadError)
         } else {
@@ -123,7 +123,7 @@ describe('Google Auth Service', () => {
     })
 
     it('should not reinitialize if already initialized', async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -137,7 +137,7 @@ describe('Google Auth Service', () => {
       
       // Clear the mock to track subsequent calls
       vi.clearAllMocks()
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -153,7 +153,7 @@ describe('Google Auth Service', () => {
 
   describe('Sign In', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -253,7 +253,7 @@ describe('Google Auth Service', () => {
 
   describe('Sign Out', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -323,7 +323,7 @@ describe('Google Auth Service', () => {
 
   describe('Current User', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -374,7 +374,7 @@ describe('Google Auth Service', () => {
 
   describe('Sign In Status', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -424,7 +424,7 @@ describe('Google Auth Service', () => {
 
   describe('User Profile Check', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -474,7 +474,7 @@ describe('Google Auth Service', () => {
 
   describe('Authentication State Persistence', () => {
     beforeEach(async () => {
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {
@@ -522,7 +522,7 @@ describe('Google Auth Service', () => {
       
       localStorage.getItem = vi.fn().mockReturnValue('encrypted_data')
       
-      mockGapi.load.mockImplementation((apis, callback) => {
+      mockGapi.load.mockImplementation((_apis, callback) => {
         if (typeof callback === 'function') {
           callback()
         } else if (callback && typeof callback.callback === 'function') {

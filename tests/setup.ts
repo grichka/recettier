@@ -295,7 +295,7 @@ interface MockWindowAPI {
   addEventListener: typeof mockAddEventListener
   removeEventListener: typeof mockRemoveEventListener
   dispatchEvent: typeof mockDispatchEvent
-  matchMedia: typeof window.matchMedia
+  matchMedia: ReturnType<typeof vi.fn>
   indexedDB: typeof mockIndexedDB
   crypto: {
     subtle: typeof mockCryptoSubtle
@@ -310,7 +310,7 @@ interface MockWindowAPI {
   addEventListener: mockAddEventListener,
   removeEventListener: mockRemoveEventListener,
   dispatchEvent: mockDispatchEvent,
-  matchMedia: window.matchMedia,
+  matchMedia: vi.fn().mockImplementation(window.matchMedia),
   indexedDB: mockIndexedDB,
   crypto: {
     subtle: mockCryptoSubtle,
