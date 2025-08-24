@@ -48,9 +48,9 @@ interface StoredAuthState {
     name: string;
     picture: string;
   } | null;
+  lastAuthTime: number;
   // Note: We no longer store access tokens for security reasons
   // Access tokens will be kept in memory only and refreshed as needed
-  lastAuthTime: number | null;
 }
 
 export class GoogleAuthService {
@@ -149,32 +149,55 @@ export class GoogleAuthService {
       }
 
       const originalCallback = this.tokenClient.callback;
+      let isResolved = false;
+      
+      // Set up a timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          // Restore original callback
+          if (this.tokenClient && originalCallback) {
+            this.tokenClient.callback = originalCallback;
+          }
+          reject(new Error('Silent token refresh timed out'));
+        }
+      }, 5000); // 5 second timeout
       
       this.tokenClient.callback = (tokenResponse: TokenResponse) => {
-        if (tokenResponse.access_token) {
-          this.accessToken = tokenResponse.access_token;
-          this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
-          // Restore original callback
-          if (this.tokenClient && originalCallback) {
-            this.tokenClient.callback = originalCallback;
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timeout);
+          
+          if (tokenResponse.access_token) {
+            this.accessToken = tokenResponse.access_token;
+            this.tokenExpiresAt = Date.now() + (tokenResponse.expires_in * 1000);
+            
+            // Restore original callback
+            if (this.tokenClient && originalCallback) {
+              this.tokenClient.callback = originalCallback;
+            }
+            resolve();
+          } else {
+            // Restore original callback
+            if (this.tokenClient && originalCallback) {
+              this.tokenClient.callback = originalCallback;
+            }
+            reject(new Error('No access token received'));
           }
-          resolve();
-        } else {
-          // Restore original callback
-          if (this.tokenClient && originalCallback) {
-            this.tokenClient.callback = originalCallback;
-          }
-          reject(new Error('Failed to get access token'));
         }
       };
 
-      // Try to get token silently
+      // Try to get token silently (no user interaction)
       try {
-        this.tokenClient.requestAccessToken({ prompt: '' });
+        this.tokenClient.requestAccessToken({ prompt: 'none' });
       } catch (error) {
-        // Restore original callback
-        this.tokenClient.callback = originalCallback;
-        reject(error);
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timeout);
+          // Restore original callback
+          this.tokenClient.callback = originalCallback;
+          reject(error);
+        }
       }
     });
   }
@@ -189,20 +212,6 @@ export class GoogleAuthService {
 
   private async doInitialize(): Promise<void> {
     try {
-      // Check for existing user profile (but not access token for security)
-      const storedAuth = this.loadAuthState();
-      if (storedAuth && storedAuth.user && storedAuth.lastAuthTime) {
-        // Check if the last auth was recent (within 24 hours)
-        const hoursSinceAuth = (Date.now() - storedAuth.lastAuthTime) / (1000 * 60 * 60);
-        if (hoursSinceAuth < 24) {
-          this.currentUser = storedAuth.user;
-          // We'll attempt to get a fresh token silently below
-        } else {
-          // Too old, clear stored state
-          this.clearAuthState();
-        }
-      }
-
       // Wait for both Google Identity Services and GAPI to be available
       await Promise.all([
         this.waitForGoogle(),
@@ -243,22 +252,50 @@ export class GoogleAuthService {
         }
       });
 
-      // If we have a stored user, try to get a fresh token silently
-      if (this.currentUser) {
-        try {
-          await this.refreshTokenSilently();
-        } catch {
-          console.log('Silent token refresh failed, user will need to sign in again');
-          this.currentUser = null;
-          this.clearAuthState();
-        }
-      }
-
       this.isInitialized = true;
+
+      // After initialization, try to restore session if we have stored auth
+      await this.tryRestoreSession();
+      
     } catch (error) {
       console.error('Failed to initialize Google Auth:', error);
       this.initializationPromise = null;
       throw error;
+    }
+  }
+
+  private async tryRestoreSession(): Promise<void> {
+    try {
+      // Check for existing user profile
+      const storedAuth = this.loadAuthState();
+      
+      if (storedAuth && storedAuth.user && storedAuth.lastAuthTime) {
+        // Check if the last auth was recent (within 24 hours)
+        const hoursSinceAuth = (Date.now() - storedAuth.lastAuthTime) / (1000 * 60 * 60);
+        
+        if (hoursSinceAuth < 24) {
+          this.currentUser = storedAuth.user;
+          console.log('Restoring session for user:', storedAuth.user.email);
+          
+          // Try to get a fresh token silently
+          try {
+            await this.refreshTokenSilently();
+            // Success - update the stored auth state
+            this.saveAuthState();
+          } catch (error) {
+            // Silent refresh failed - user will need to sign in again
+            console.log('Silent token refresh failed:', error);
+            // Don't clear the user immediately, let the UI handle it
+          }
+        } else {
+          // Too old, clear stored state
+          console.log('Stored auth expired, clearing...');
+          this.clearAuthState();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore session:', error);
+      this.clearAuthState();
     }
   }
 
@@ -449,6 +486,33 @@ export class GoogleAuthService {
   }
 
   /**
+   * Check if we have stored authentication state without loading it
+   */
+  hasStoredAuthState(): boolean {
+    try {
+      const stored = localStorage.getItem(GoogleAuthService.AUTH_STORAGE_KEY);
+      
+      if (!stored) return false;
+      
+      const decryptedData = TokenSecurity.decryptToken(stored);
+      const authState = JSON.parse(decryptedData);
+      
+      if (!authState.user || !authState.lastAuthTime) {
+        return false;
+      }
+      
+      // Check if auth state is not too old (24 hours)
+      const authAge = Date.now() - authState.lastAuthTime;
+      const isValid = authAge <= 24 * 60 * 60 * 1000;
+      
+      return isValid;
+    } catch (error) {
+      // If we can't decrypt or parse, assume no valid stored state
+      return false;
+    }
+  }
+
+  /**
    * Check if API key is configured
    */
   async hasApiKey(): Promise<boolean> {
@@ -463,16 +527,18 @@ export class GoogleAuthService {
   }
 
   async ensureValidToken(): Promise<boolean> {
+    // If we have a valid token in memory, use it
     if (this.accessToken && this.isTokenValid(this.tokenExpiresAt)) {
       return true;
     }
 
+    // If we have a user profile, try to refresh the token silently
     if (this.currentUser) {
       try {
         await this.refreshTokenSilently();
-        return true;
-      } catch {
-        console.log('Silent token refresh failed');
+        return this.accessToken !== null;
+      } catch (error) {
+        console.log('Silent token refresh failed:', error);
         return false;
       }
     }

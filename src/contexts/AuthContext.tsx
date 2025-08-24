@@ -36,14 +36,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
+      // Check if we have stored auth state before initializing
+      const hasStoredAuth = googleAuthService.hasStoredAuthState();
+      
+      if (hasStoredAuth) {
+        // Show "Restoring session..." state while we try to restore
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: true,
+          error: null,
+        }));
+      }
+
       await googleAuthService.initialize();
       
-      // Check if we have user profile information and try to get a valid token
-      if (googleAuthService.hasUserProfile()) {
+      // After initialization, check if we successfully restored the session
+      const hasUserProfile = googleAuthService.hasUserProfile();
+      
+      if (hasUserProfile) {
         const hasValidToken = await googleAuthService.ensureValidToken();
         
         if (hasValidToken) {
           const googleUser = googleAuthService.getCurrentUser();
+          
           if (googleUser) {
             const profile = googleUser.getBasicProfile();
             const user: User = {
@@ -54,6 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               accessToken: googleAuthService.getAccessToken() || '',
             };
             
+            console.log('Session restored successfully for user:', user.email);
             setAuthState({
               user,
               isAuthenticated: true,
@@ -62,6 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
             return;
           }
+        } else {
+          console.log('Could not restore valid token, user will need to sign in again');
         }
       }
       
@@ -86,9 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: errorMessage,
       });
     }
-  };
-
-  const signIn = async () => {
+  };  const signIn = async () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       

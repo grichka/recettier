@@ -235,11 +235,11 @@ export class TokenSecurity {
 
   public static sanitizeStoredData(): void {
     // Clear potentially sensitive data from localStorage
+    // Note: recettier_auth_state is encrypted and needed for session persistence
     const sensitiveKeys = [
-      'recettier_auth_state',
-      'recettier_token_security',
-      'google_auth_token',
-      'access_token',
+      'recettier_token_security', // Old token storage (legacy)
+      'google_auth_token',        // Direct token storage (insecure)
+      'access_token',             // Direct token storage (insecure)
     ];
     
     sensitiveKeys.forEach(key => {

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth State</title>
+</head>
+<body>
+    <h1>Debug Auth State</h1>
+    <div id="output"></div>
+    
+    <script>
+        function debugAuthState() {
+            const output = document.getElementById('output');
+            const results = [];
+            
+            // Check localStorage for auth data
+            const authKey = 'recettier_auth_state';
+            const stored = localStorage.getItem(authKey);
+            results.push(`Auth storage key (${authKey}): ${stored ? 'EXISTS' : 'NOT FOUND'}`);
+            
+            // Check for device salt
+            const salt = localStorage.getItem('recettier_device_salt');
+            results.push(`Device salt: ${salt ? 'EXISTS' : 'NOT FOUND'}`);
+            
+            // Check session ID
+            const sessionId = sessionStorage.getItem('recettier_session');
+            results.push(`Session ID: ${sessionId ? 'EXISTS' : 'NOT FOUND'}`);
+            
+            // Check all localStorage keys
+            const allKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                allKeys.push(localStorage.key(i));
+            }
+            results.push(`All localStorage keys: ${allKeys.join(', ')}`);
+            
+            // Check IndexedDB for API key
+            const request = indexedDB.open('RecettierSecureStorage', 1);
+            request.onsuccess = () => {
+                const db = request.result;
+                if (db.objectStoreNames.contains('apiKeys')) {
+                    const transaction = db.transaction(['apiKeys'], 'readonly');
+                    const store = transaction.objectStore('apiKeys');
+                    const getRequest = store.get('googleApiKey');
+                    getRequest.onsuccess = () => {
+                        const hasApiKey = !!getRequest.result;
+                        results.push(`API Key in IndexedDB: ${hasApiKey ? 'EXISTS' : 'NOT FOUND'}`);
+                        
+                        output.innerHTML = results.map(r => `<p>${r}</p>`).join('');
+                    };
+                } else {
+                    results.push('API Key store: NOT FOUND');
+                    output.innerHTML = results.map(r => `<p>${r}</p>`).join('');
+                }
+            };
+            
+            request.onerror = () => {
+                results.push('IndexedDB: ERROR');
+                output.innerHTML = results.map(r => `<p>${r}</p>`).join('');
+            };
+        }
+        
+        debugAuthState();
+    </script>
+</body>
+</html>

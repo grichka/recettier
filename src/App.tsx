@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CssBaseline } from '@mui/material';
+import { CssBaseline, CircularProgress, Typography, Box } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { useAuth } from './hooks/useAuth';
@@ -43,14 +43,19 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        Loading...
-      </div>
+      <Box 
+        display="flex" 
+        flexDirection="column"
+        justifyContent="center" 
+        alignItems="center" 
+        height="100vh"
+        gap={2}
+      >
+        <CircularProgress />
+        <Typography variant="body1" color="text.secondary">
+          Restoring your session...
+        </Typography>
+      </Box>
     );
   }
 
